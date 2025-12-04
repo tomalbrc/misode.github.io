@@ -1,0 +1,668 @@
+use ::java::util::text::Text
+use ::java::world::block
+use ::java::world::item::ItemStack
+use ::java::util::block_state::BlockState
+use ::java::world::component::DataComponentPatch
+use ::java::assets::model
+use ::java::assets::block_state_definition
+use ::java::util::direction::Direction
+
+dispatch minecraft:resource[filament:item_preset] to struct FilamentItemJson {
+	...SharedJson,
+	item_tags?: [#[id(registry="item",tags="required")] string],
+	item_resource?: ItemResource,
+	behaviour?: BehaviourMap,
+	properties?: ItemProperties,
+	components?: DataComponentPatch,
+}
+
+dispatch minecraft:resource[filament:block_preset] to struct FilamentBlockJson {
+	...SharedJson,
+	item_tags?: [#[id(registry="item",tags="required")] string],
+	block_tags?: [#[id(registry="block",tags="required")] string],
+	item_resource?: ItemResource,
+	block_resource?: BlockResource,
+	block_model_type?: (BlockModelType | BlockModelTypeMap),
+	behaviour?: BehaviourMap,
+	properties?: BlockProperties,
+	components?: DataComponentPatch,
+}
+
+dispatch minecraft:resource[filament:decoration_preset] to struct FilamentDecorationJson {
+	...SharedJson,
+	item_tags?: [#[id(registry="item",tags="required")] string],
+	block_tags?: [#[id(registry="block",tags="required")] string],
+	item_resource?: ItemResource,
+	behaviour?: BehaviourMap,
+	properties?: DecorationProperties,
+	components?: DataComponentPatch,
+}
+
+struct SharedJson {
+	id: string,
+	vanilla_item?: #[id="item"] string,
+	/// Item group identifier as defined in `data/<namespace>/filament/item-group.json`
+	item_group?: string
+}
+
+struct ItemProperties {
+	durability?: int,
+	stack_size?: int,
+	/// Supports tpapi simplified text format
+	lore?: [string],
+	/// Whether the item burns in fire/lava
+	fire_resistant?: boolean,
+	/// Copies the item components of the `vanilla_item`
+	copy_components?: boolean
+}
+
+struct ItemResource {
+	/// parent model for automatic model generation
+	parent?: #[id="model"] string,
+
+	models?: StringMap,
+	textures?: ObjectStringMap
+}
+
+struct StringMap {
+	[string]: string
+}
+
+struct BlockModelTypeMap {
+	[string]: BlockModelType
+}
+
+struct IntMap {
+	[string]: string
+}
+
+struct BoolMap {
+	[string]: string
+}
+
+struct ObjectStringMap {
+	[string]: (string | StringMap)
+}
+
+struct BehaviourMap {
+	[BehaviourType]: filament:behaviour[[%key]],
+}
+
+enum(string) push_reaction {
+    normal = "normal",
+    destroy = "destroy",
+    block = "block",
+    ignore = "ignore",
+    push_only = "push_only"
+}
+
+struct BlockProperties {
+	...ItemProperties,
+	/// Base block for sounds (and particles)
+	block_base?: #[id="block"] string,
+	/// Does breaking this block require a tool? (Set the tool via tags!)
+	requires_tool?: boolean,
+	explosion_resistance?: float,
+	destroy_time?: float,
+
+	is_suffocating?: (boolean | BoolMap),
+	redstone_conductor?: (boolean | BoolMap),
+	light_emission?: (int | IntMap),
+
+    transparent?: boolean,
+	/// Allows mobs to spawn on this block
+    allows_spawning?: boolean,
+	/// Replaceable like how grass can be replaced by other blocks when placing
+    replaceable?: boolean,
+    collision?: boolean,
+    solid?: boolean,
+
+    push_reaction?: push_reaction,
+
+    loot_table?: #[id="loot_table"] string,
+
+	/// Uses item displays to render the block, does not use up retextured block states
+    virtual?: boolean,
+    show_break_particles?: boolean,
+
+    sounds?: struct {
+        volume: float,
+        pitch: float,
+        break: #[id="sound"] string,
+        step: #[id="sound"] string,
+        place: #[id="sound"] string,
+        hit: #[id="sound"] string,
+        fall: #[id="sound"] string
+    }
+}
+
+struct DecorationProperties {
+	placement?: placement,
+	/// Full-bright effect
+	glow?: boolean,
+	/// "fixed" by default
+	display?: item_display_context,
+	/// Enabled by default
+	use_item_particles?: boolean,
+	/// Drops itself, enabled by default
+	drops?: boolean,
+	...BlockProperties,
+}
+
+struct BlockResource {
+	/// parent model for automatic model generation
+	parent?: #[id="model"] string,
+
+	models?: StringMap,
+	textures?: ObjectStringMap
+}
+
+enum(string) item_display_context {
+  none = "none",
+  third_person_left_hand = "third_person_left_hand",
+  third_person_right_hand = "third_person_right_hand",
+  first_person_left_hand = "first_person_left_hand",
+  first_person_right_hand = "first_person_right_hand",
+  head = "head",
+  gui = "gui",
+  ground = "ground",
+  fixed = "fixed"
+}
+
+struct placement {
+  wall: boolean,
+  floor: boolean,
+  ceiling: boolean
+}
+
+enum(string) BlockModelType {
+  full_block = "full_block",
+  transparent_block = "transparent_block",
+  transparent_block_waterlogged = "transparent_block_waterlogged",
+  biome_transparent_block = "biome_transparent_block",
+  biome_transparent_block_waterlogged = "biome_transparent_block_waterlogged",
+  farmland_block = "farmland_block",
+  vines_block = "vines_block",
+  plant_block = "plant_block",
+  biome_plant_block = "biome_plant_block",
+  kelp_block = "kelp_block",
+  cactus_block = "cactus_block",
+  sculk_sensor_block = "sculk_sensor_block",
+  sculk_sensor_block_waterlogged = "sculk_sensor_block_waterlogged",
+  tripwire_block = "tripwire_block",
+  tripwire_block_flat = "tripwire_block_flat",
+  top_slab = "top_slab",
+  top_slab_waterlogged = "top_slab_waterlogged",
+  bottom_slab = "bottom_slab",
+  bottom_slab_waterlogged = "bottom_slab_waterlogged",
+  top_trapdoor = "top_trapdoor",
+  bottom_trapdoor = "bottom_trapdoor",
+  north_trapdoor = "north_trapdoor",
+  east_trapdoor = "east_trapdoor",
+  south_trapdoor = "south_trapdoor",
+  west_trapdoor = "west_trapdoor",
+  top_trapdoor_waterlogged = "top_trapdoor_waterlogged",
+  bottom_trapdoor_waterlogged = "bottom_trapdoor_waterlogged",
+  north_trapdoor_waterlogged = "north_trapdoor_waterlogged",
+  east_trapdoor_waterlogged = "east_trapdoor_waterlogged",
+  south_trapdoor_waterlogged = "south_trapdoor_waterlogged",
+  west_trapdoor_waterlogged = "west_trapdoor_waterlogged",
+  north_door = "north_door",
+  east_door = "east_door",
+  south_door = "south_door",
+  west_door = "west_door",
+  top_scaffolding = "top_scaffolding",
+  bottom_scaffolding = "bottom_scaffolding",
+  top_scaffolding_waterlogged = "top_scaffolding_waterlogged",
+  bottom_scaffolding_waterlogged = "bottom_scaffolding_waterlogged"
+}
+
+/// Filament behaviour types
+enum(string) BehaviourType {
+	axis = "axis",
+	bouncy = "bouncy",
+	budding = "budding",
+	can_survive = "can_survive",
+	count = "count",
+	crop = "crop",
+	door = "door",
+	drop_xp = "drop_xp",
+	execute_attack_block = "execute_attack_block",
+	execute_interact_block = "execute_interact_block",
+	facing = "facing",
+	falling_block = "falling_block",
+	fire = "fire",
+	flammable = "flammable",
+	furnace = "furnace",
+	grass_spread = "grass_spread",
+	hopper = "hopper",
+	horizontal_facing = "horizontal_facing",
+	lamp = "lamp",
+	leaf_decay = "leaf_decay",
+	oxidizable = "oxidizable",
+	powerlevel = "powerlevel",
+	powersource = "powersource",
+	repeater = "repeater",
+	rotating = "rotating",
+	sapling = "sapling",
+	slab = "slab",
+	strippable = "strippable",
+	tnt = "tnt",
+	trapdoor = "trapdoor",
+	waterloggable = "waterloggable",
+	waxable = "waxable",
+
+// item
+
+	banner_pattern = "banner_pattern",
+	bow = "bow",
+	compostable = "compostable",
+	cosmetic = "cosmetic",
+	crossbow = "crossbow",
+	execute = "execute",
+	execute_attack_item = "execute_attack_item",
+	execute_interact_item = "execute_interact_item",
+	fishing_rod = "fishing_rod",
+	fuel = "fuel",
+	hoe = "hoe",
+	instrument = "instrument",
+	mace = "mace",
+	place_on_water = "place_on_water",
+	shears = "shears",
+	shield = "shield",
+	shoot = "shoot",
+	shovel = "shovel",
+	stripper = "stripper",
+	trap = "trap",
+	trident = "trident",
+	villager_food = "villager_food",
+	wax = "wax",
+
+// deco
+
+	animation = "animation",
+	bed = "bed",
+	connectable = "connectable",
+	container = "container",
+	interact_execute = "interact_execute",
+	lock = "lock",
+	seat = "seat",
+	showcase = "showcase",
+}
+
+dispatch filament:behaviour[axis] to struct Axis {}
+
+dispatch filament:behaviour[bouncy] to struct {
+	bounciness?: double,
+	max?: double
+}
+
+dispatch filament:behaviour[budding] to struct {
+	chance?: int,
+	grows?: [#[id="block"] string],
+	sides?: [Direction]
+}
+
+dispatch filament:behaviour[can_survive] to struct {
+	/// List of blocks this block can survive on.
+	blocks?: [#[id="block"] string],
+	/// List of blocktags this block can survive on.
+	block_tags?: [#[id(registry="block",tags="required")] string]
+}
+
+dispatch filament:behaviour[count] to struct {
+	max?: int
+}
+
+dispatch filament:behaviour[crop] to struct {
+	max_age?: int,
+	min_light_level?: int,
+	block_radius?: int,
+	bonus_block?: #[id="block"] string,
+	villager_interaction?: boolean,
+	bee_interaction?: boolean
+}
+
+dispatch filament:behaviour[door] to struct {
+    can_open_by_wind_charge?: boolean,
+    can_open_by_hand?: boolean,
+    open_sound?: #[id="sound"] string,
+    close_sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[drop_xp] to struct {
+    min?: int,
+    max?: int
+}
+
+dispatch filament:behaviour[execute_attack_block] to struct {
+    consumes?: boolean,
+    command?: string,
+    commands?: [string],
+    at_block?: boolean,
+    drop_block?: boolean,
+    sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[execute_interact_block] to struct {
+    consumes?: boolean,
+    command?: string,
+    commands?: [string],
+    at_block?: boolean,
+    drop_block?: boolean,
+    sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[facing] to struct {
+    // no config fields
+}
+
+dispatch filament:behaviour[falling_block] to struct {
+    drop_item?: boolean,
+    delay_after_place?: int,
+    heavy?: boolean,
+    damage_per_distance?: float,
+    max_damage?: int,
+    disable_drops?: boolean,
+    silent?: boolean,
+    break_sound?: #[id="sound"] string,
+    land_sound?: #[id="sound"] string,
+    can_be_damaged?: boolean,
+    damaged_block?: #[id="block"] string,
+    base_break_chance?: float,
+    break_chance_per_distance?: float
+}
+
+dispatch filament:behaviour[fire] to struct {
+    hurt?: boolean,
+    tick?: boolean,
+    light_portal?: boolean,
+    damage?: float,
+    blocks?: [#[id="block"] string],
+    block_tags?: [#[id(registry="block",tags="required")] string]
+}
+
+dispatch filament:behaviour[flammable] to struct {
+    spread?: int,
+    burn?: int
+}
+
+dispatch filament:behaviour[furnace] to struct {
+    // no config
+}
+
+dispatch filament:behaviour[grass_spread] to struct {
+    decay_block_state?: #[id="block"] string,
+    propagates_to_blocks?: [#[id="block"] string],
+    propagates_to_block_tags?: [#[id(registry="block",tags="required")] string]
+}
+
+dispatch filament:behaviour[hopper] to struct {
+    filter_items?: [string],
+    pickup_item_entities?: boolean,
+    take_from_container?: boolean,
+    cooldown_time?: int
+}
+
+dispatch filament:behaviour[horizontal_facing] to struct {
+    // no config
+}
+
+dispatch filament:behaviour[lamp] to struct {
+    on?: int,
+    off?: int,
+    default_value?: int,
+    cycle?: [int],
+    models?: boolean
+}
+
+dispatch filament:behaviour[leaf_decay] to struct {
+    block_tag?: #[id(registry="block",tags="required")] string,
+    decay_chance?: float
+}
+
+dispatch filament:behaviour[oxidizable] to struct {
+    replacement?: #[id="block"] string,
+    weather_state?: string  // Could be enum
+}
+
+dispatch filament:behaviour[powerlevel] to struct {
+    max?: int
+}
+
+dispatch filament:behaviour[powersource] to struct {
+    value?: int
+}
+
+dispatch filament:behaviour[repeater] to struct {
+    delay?: int,
+    loss?: int
+}
+
+dispatch filament:behaviour[rotating] to struct {
+	/// Rotate in 45 degree angles
+    smooth?: boolean
+}
+
+dispatch filament:behaviour[sapling] to struct {
+    min_light_level?: int,
+    random_tick_growth_chance?: float,
+    bonemeal_growth_chance?: float,
+    secondary_chance?: float,
+    mega_tree?: #[id="structure_feature"] string,
+    secondary_mega_tree?: #[id="structure_feature"] string,
+    tree?: #[id="structure_feature"] string,
+    secondary_tree?: #[id="structure_feature"] string,
+    flowers?: #[id="structure_feature"] string,
+    secondary_flowers?: #[id="structure_feature"] string
+}
+
+dispatch filament:behaviour[slab] to struct {
+    // no config
+}
+
+dispatch filament:behaviour[strippable] to struct {
+    replacement?: #[id="block"] string,
+    loot_table?: #[id="loot_table"] string,
+    scrape?: boolean,
+    scrape_wax?: boolean
+}
+
+dispatch filament:behaviour[tnt] to struct {
+    unstable?: boolean,
+    explosion_power?: float,
+    fuse_time?: int,
+    prime_sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[trapdoor] to struct {
+    can_open_by_wind_charge?: boolean,
+    can_open_by_hand?: boolean,
+    open_sound?: #[id="sound"] string,
+    close_sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[waterloggable] to struct {
+    // no config
+}
+
+dispatch filament:behaviour[banner_pattern] to struct {
+    id: #[id="banner_pattern"] string
+}
+
+dispatch filament:behaviour[bow] to struct {
+    power_multiplier?: float,
+    supported_projectiles?: [#[id="item"] string],
+    supported_held_projectiles?: [#[id="item"] string],
+    shoot_sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[compostable] to struct {
+    chance?: float,
+    villager_interaction?: boolean
+}
+
+dispatch filament:behaviour[cosmetic] to struct {
+    slot?: string,
+    model?: #[id="model"] string,
+    autoplay?: string,
+    scale?: struct { x: float, y: float, z: float }
+}
+
+dispatch filament:behaviour[crossbow] to struct {
+    power_multiplier?: float,
+    supported_projectiles?: [#[id="item"] string],
+    supported_held_projectiles?: [#[id="item"] string],
+    shoot_sound?: #[id="sound"] string,
+    loading_start_sound?: #[id="sound"] string,
+    loading_middle_sound?: #[id="sound"] string,
+    loading_end_sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[execute] to struct {
+    consumes?: boolean,
+    command?: string,
+    commands?: [string],
+    at_block?: boolean,
+    drop_block?: boolean,
+    sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[execute_attack_item] to struct {
+    consumes?: boolean,
+    command?: string,
+    commands?: [string],
+    sound?: #[id="sound"] string,
+    on_entity_attack?: boolean
+}
+
+dispatch filament:behaviour[execute_interact_item] to struct {
+    consumes?: boolean,
+    command?: string,
+    commands?: [string],
+    sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[fishing_rod] to struct {
+}
+
+dispatch filament:behaviour[fuel] to struct {
+    value?: int
+}
+
+dispatch filament:behaviour[hoe] to struct {
+    sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[instrument] to struct {
+    sound?: #[id="sound"] string,
+    range?: int,
+    use_duration?: int
+}
+
+dispatch filament:behaviour[mace] to struct {
+    damage_multiplier?: float
+}
+
+dispatch filament:behaviour[place_on_water] to struct {
+}
+
+dispatch filament:behaviour[shears] to struct {
+    sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[shield] to struct {
+}
+
+dispatch filament:behaviour[shoot] to struct {
+    consumes?: boolean,
+    base_damage?: double,
+    speed?: double,
+    projectile?: #[id="item"] string
+}
+
+dispatch filament:behaviour[shovel] to struct {
+    sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[stripper] to struct {
+    sound?: #[id="sound"] string
+}
+
+dispatch filament:behaviour[trap] to struct {
+    types?: [#[id="entity_type"] string],
+    tags?: [#[id(registry="entity_type",tags="required")] string],
+    required_effects?: [#[id="mob_effect"] string],
+    chance?: int,
+    use_duration?: int
+}
+
+dispatch filament:behaviour[trident] to struct {
+}
+
+dispatch filament:behaviour[villager_food] to struct {
+    value?: int
+}
+
+dispatch filament:behaviour[wax] to struct {
+    reduce_durability?: boolean
+}
+
+
+dispatch filament:behaviour[animation] to struct {
+	/// id of the model, for example `mynamespace:mymodel` in `data/mynamespace/filament/model/mymodel.bbmodel`
+    model?: #[id] string,
+	/// Animation name to automatically play
+    autoplay?: string
+}
+
+dispatch filament:behaviour[bed] to struct {
+    skip_night?: boolean
+}
+
+dispatch filament:behaviour[connectable] to struct {
+    corners?: boolean
+}
+
+dispatch filament:behaviour[container] to struct {
+    name?: string,
+    size?: int,
+    purge?: boolean,
+    open_animation?: string
+}
+
+dispatch filament:behaviour[interact_execute] to struct {
+    key?: #[id] string,
+    consume_key?: boolean,
+    discard?: boolean,
+    animation?: string
+}
+
+dispatch filament:behaviour[lock] to struct {
+    key?: #[id] string,
+    consume_key?: boolean,
+    discard?: boolean,
+    unlock_animation?: string
+}
+
+dispatch filament:behaviour[seat] to struct {
+    seats?: [struct {
+        offset?: [float],
+        direction?: float
+    }]
+}
+
+enum(string) showcase_type {
+  item = "item",
+  block = "block",
+  dynamic = "dynamic"
+}
+
+dispatch filament:behaviour[showcase] to struct {
+    showcases?: [struct {
+        offset?: [float],
+        scale?: [float],
+        rotation?: [float],
+        type?: showcase_type
+    }]
+}

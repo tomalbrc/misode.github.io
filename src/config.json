@@ -952,6 +952,33 @@
       "dependency": "pixelmon",
       "wiki": "https://pixelmonmod.com/wiki/",
       "minVersion": "1.21.1"
+    },
+    {
+      "id": "filament:item_preset",
+      "url": "filament/item",
+      "path": "filament/item",
+      "tags": ["partners"],
+      "dependency": "filament",
+      "wiki": "https://tomalbrc.de/docs/filament/",
+      "minVersion": "1.21.1"
+    },
+    {
+      "id": "filament:block_preset",
+      "url": "filament/block",
+      "path": "filament/block",
+      "tags": ["partners"],
+      "dependency": "filament",
+      "wiki": "https://tomalbrc.de/docs/filament/",
+      "minVersion": "1.21.1"
+    },
+    {
+      "id": "filament:decoration_preset",
+      "url": "filament/decoration",
+      "path": "filament/decoration",
+      "tags": ["partners"],
+      "dependency": "filament",
+      "wiki": "https://tomalbrc.de/docs/filament/",
+      "minVersion": "1.21.1"
     }
   ],
   "legacyGuides": [
